@@ -30,6 +30,6 @@ http://localhost:8081/?id=2
 
 Транзакция
 
-post
+get
 
 http://localhost:8081/transaction?id1=1&id2=2&sum=20.0
