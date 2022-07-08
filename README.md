@@ -1,9 +1,9 @@
 # BankRestApi
-Примеры запросов 
-Создание аккаунта
+#Примеры запросов 
+#Создание аккаунта
 post
 http://localhost:8081/create_account
-тело запроса 
+#тело запроса 
 {
     "Client": {
         "Id": 2,
@@ -12,10 +12,10 @@ http://localhost:8081/create_account
     },
     "Balance":50.0
 }
-Получение аккаунта по id 
+#Получение аккаунта по id 
 get
 http://localhost:8081/?id=2
 
-Транзакция
+#Транзакция
 post
 http://localhost:8081/transaction?id1=1&id2=2&sum=20.0
