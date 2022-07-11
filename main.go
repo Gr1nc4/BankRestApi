@@ -7,12 +7,14 @@ import (
 	"log"
 	"net/http"
 	"strconv"
+	"sync"
 )
 
 type account struct {
 	Client  client  `json:"Client"`
 	Balance float64 `json:"Balance"`
 	//	haveLoanLimit bool    `json:"HaveLoanLimit"`
+	Mutex sync.Mutex
 }
 
 type client struct {
@@ -26,6 +28,8 @@ var accStore = []account{}
 var DataSt = map[int]account{}
 
 func main() {
+	fmt.Println("=============Start=============")
+
 	//для теста
 	// DataStore := make(map[int]account)
 
@@ -60,24 +64,24 @@ func createAccount(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	if r.Method != http.MethodPost {
 		w.Header().Set("Allow", http.MethodPost)
-		fmt.Println(" incorret method", http.StatusMethodNotAllowed)
+		log.Println(" incorret method", http.StatusMethodNotAllowed)
 		return
 	}
 	var acc account
 	reqBody, err := ioutil.ReadAll(r.Body)
 	if err != nil {
-		fmt.Println(w, " error with reading json", http.StatusNotAcceptable)
+		log.Println(w, " error with reading json", http.StatusNotAcceptable)
 		return
 	}
 	err = json.Unmarshal(reqBody, &acc)
 	if err != nil {
-		fmt.Println("не удалось распарсить")
+		log.Println("не удалось распарсить")
 	}
 	accStore = append(accStore, acc)
 	DataSt[acc.Client.Id] = acc
 	w.WriteHeader(http.StatusCreated)
-	fmt.Println("создан авкаунт клиента", acc.Client.Name)
-	fmt.Println(DataSt)
+	log.Println("создан авкаунт клиента", acc.Client.Name, ",на балансе:", acc.Balance)
+	// log.Println("",DataSt)
 }
 
 func getAccountById(w http.ResponseWriter, r *http.Request) {
@@ -85,7 +89,7 @@ func getAccountById(w http.ResponseWriter, r *http.Request) {
 
 	AccId, _ := strconv.Atoi(id)
 
-	fmt.Println(AccId, DataSt[AccId])
+	log.Println(AccId, DataSt[AccId].Client.Name, DataSt[AccId].Client.Surname, ", на балансе - ", DataSt[AccId].Balance)
 }
 func transaction(w http.ResponseWriter, r *http.Request) {
 	firstId := r.URL.Query().Get("id1")
@@ -98,7 +102,13 @@ func transaction(w http.ResponseWriter, r *http.Request) {
 	acc1 := DataSt[id1]
 	acc2 := DataSt[id2]
 
+	log.Println("Баланс клиента", acc1.Client.Name, "до транзакции -", acc1.Balance)
+	log.Println("Баланс клиента", acc2.Client.Name, "до транзакции -", acc2.Balance)
+
 	transfer(&acc1, &acc2, sum)
+	log.Println("Баланс клиента", acc1.Client.Name, "после транзакции -", acc1.Balance)
+	log.Println("Баланс клиента", acc2.Client.Name, "после транзакции -", acc2.Balance)
+
 }
 
 //Добавление аккаунта в БД
@@ -140,13 +150,21 @@ func balanceDecrease(acc *account, sum float64) {
 
 //Перевод средств с одного аккаунта на другой
 func transfer(acc1, acc2 *account, sum float64) {
+	acc1.Mutex.Lock()
+	acc2.Mutex.Lock()
+
+	defer acc1.Mutex.Unlock()
+	defer acc2.Mutex.Unlock()
 
 	// if !acc2.haveLoanLimit && acc2.balance < sum {
 	// 	fmt.Println("Ошибка перевода, недостаточно средств у", acc2.client.name)
 	// } else {
 	balanceAdd(acc1, sum)
 	balanceDecrease(acc2, sum)
-	fmt.Println("транзкация успешна")
+	DataSt[acc1.Client.Id] = *acc1
+	DataSt[acc2.Client.Id] = *acc2
+	log.Println("транзкация успешна")
+	// fmt.Println("транзкация успешна")
 
 }
 
