@@ -101,13 +101,16 @@ func transaction(w http.ResponseWriter, r *http.Request) {
 	sum, _ := strconv.ParseFloat(S, 64)
 	acc1 := DataSt[id1]
 	acc2 := DataSt[id2]
+	if acc2.Balance-sum >= 0 {
+		log.Println("Баланс клиента", acc1.Client.Name, "до транзакции -", acc1.Balance)
+		log.Println("Баланс клиента", acc2.Client.Name, "до транзакции -", acc2.Balance)
 
-	log.Println("Баланс клиента", acc1.Client.Name, "до транзакции -", acc1.Balance)
-	log.Println("Баланс клиента", acc2.Client.Name, "до транзакции -", acc2.Balance)
-
-	transfer(&acc1, &acc2, sum)
-	log.Println("Баланс клиента", acc1.Client.Name, "после транзакции -", acc1.Balance)
-	log.Println("Баланс клиента", acc2.Client.Name, "после транзакции -", acc2.Balance)
+		transfer(&acc1, &acc2, sum)
+		log.Println("Баланс клиента", acc1.Client.Name, "после транзакции -", acc1.Balance)
+		log.Println("Баланс клиента", acc2.Client.Name, "после транзакции -", acc2.Balance)
+	} else {
+		log.Println("На счету клиента", acc2.Client.Name, "недостаточно средств для совершения операции")
+	}
 
 }
 
@@ -159,11 +162,13 @@ func transfer(acc1, acc2 *account, sum float64) {
 	// if !acc2.haveLoanLimit && acc2.balance < sum {
 	// 	fmt.Println("Ошибка перевода, недостаточно средств у", acc2.client.name)
 	// } else {
+
 	balanceAdd(acc1, sum)
 	balanceDecrease(acc2, sum)
 	DataSt[acc1.Client.Id] = *acc1
 	DataSt[acc2.Client.Id] = *acc2
-	log.Println("транзкация успешна")
+	log.Println("Транзкация успешна")
+
 	// fmt.Println("транзкация успешна")
 
 }
@@ -180,3 +185,4 @@ func transfer(acc1, acc2 *account, sum float64) {
 
 }
 */
+
